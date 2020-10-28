@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.4">
+  <POU Name="MAIN" Id="{5564795c-83e4-4455-958d-49ce1d88a63f}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	iState:	UINT;
+	
+	bRed1:	BOOL;
+	bYellow1:	BOOL;
+	bGreen1:	BOOL;
+	bRed2:	BOOL;
+	bYellow2:	BOOL;
+	bGreen2:	BOOL;
+	
+	fbLightTimer:	TON;
+	
+	iPress 	AT	%MW0:	INT;	//ADS address 0x3000
+	bWalk:	BOOL := FALSE;
+	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE iState OF
+	0:	IF iPress > 0 THEN
+		iState:= 1;
+		ELSE
+			bRed1:=FALSE; bYellow1:=FALSE; bGreen1:=TRUE;
+			bRed2:=TRUE; bYellow2:=FALSE; bGreen2:=FALSE;
+			fbLightTimer(IN := bGreen1, PT:= T#3S);
+			IF fbLightTimer.Q THEN
+				iState:=1;
+				fbLightTimer(IN := FALSE);
+			END_IF 
+	END_IF
+	
+	1:	
+		bRed1:=FALSE; bYellow1:=TRUE; bGreen1:=FALSE;
+		bRed2:=TRUE; bYellow2:=FALSE; bGreen2:=FALSE;
+		fbLightTimer(IN := bYellow1, PT:= T#1S);
+		IF fbLightTimer.Q THEN
+			iState:=2;
+			fbLightTimer(IN := FALSE);
+		END_IF
+	2:
+		bRed1:=TRUE; bYellow1:=FALSE; bGreen1:=FALSE;
+		bRed2:=TRUE; bYellow2:=FALSE; bGreen2:=FALSE;
+		IF iPress > 0 THEN
+			fbLightTimer(IN := bRed1 AND bRed2, PT:= T#6S);
+			ELSE
+				fbLightTimer(IN := bRed1 AND bRed2, PT:= T#1S);
+		END_IF
+		IF fbLightTimer.Q THEN
+			iPress:=0;
+			iState:=3;
+			fbLightTimer(IN := FALSE);
+		END_IF
+	3:	IF iPress > 0 THEN
+		iState:=4;
+		ELSE
+			bRed1:=TRUE; bYellow1:=FALSE; bGreen1:=FALSE;
+			bRed2:=FALSE; bYellow2:=FALSE; bGreen2:=TRUE;
+			fbLightTimer(IN := bGreen2, PT:= T#3S);
+			IF fbLightTimer.Q THEN
+				iState:=4;
+				fbLightTimer(IN := FALSE);
+			END_IF
+	END_IF
+	
+	4:	
+		bRed1:=TRUE; bYellow1:=FALSE; bGreen1:=FALSE;
+		bRed2:=FALSE; bYellow2:=TRUE; bGreen2:=FALSE;
+		fbLightTimer(IN := bYellow2, PT:= T#1S);
+		IF fbLightTimer.Q THEN
+			iState:=5;
+			fbLightTimer(IN := FALSE);
+		END_IF
+		
+	5:
+		bRed1:=TRUE; bYellow1:=FALSE; bGreen1:=FALSE;
+		bRed2:=TRUE; bYellow2:=FALSE; bGreen2:=FALSE;
+		IF iPress > 0 THEN
+			fbLightTimer(IN := bRed1 AND bRed2, PT:= T#6S);
+			ELSE
+				fbLightTimer(IN := bRed1 AND bRed2, PT:= T#1S);
+		END_IF
+		IF fbLightTimer.Q THEN
+			iPress:=0;
+			iState:=0;
+			fbLightTimer(IN := FALSE);
+		END_IF
+END_CASE
+]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="38" Count="68" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
